@@ -20,4 +20,6 @@ EXPOSE 9000
 ENV PYTHONUNBUFFERED=1
 
 # Define the command to start the Scrapy spider with Kafka consumer
-CMD ["scrapy", "crawl", "102"]
+# CMD ["scrapy", "crawl", "101"]
+CMD ["scrapy", "crawl", "101", "--loglevel", "ERROR"]
+

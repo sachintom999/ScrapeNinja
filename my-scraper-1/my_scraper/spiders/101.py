@@ -2,6 +2,7 @@ import scrapy
 import json
 from kafka import KafkaConsumer,KafkaProducer
 from termcolor import cprint
+import time
 
 class KafkaSpider(scrapy.Spider):
     name = "101"
@@ -24,12 +25,7 @@ class KafkaSpider(scrapy.Spider):
         super(KafkaSpider, self).__init__(*args, **kwargs)
         
         
-        self.kafka_producer = KafkaProducer(
-            bootstrap_servers='localhost:9092',
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            linger_ms=500,  # Prevents immediate closing
-            acks=1  # Ensures delivery before closing
-        )
+        self.kafka_producer = create_kafka_producer()
 
 
 
@@ -39,7 +35,8 @@ class KafkaSpider(scrapy.Spider):
         """
         kafka_consumer = KafkaConsumer(
             "crawl_requests",
-            bootstrap_servers="localhost:9092",
+            # bootstrap_servers="localhost:9092",
+            bootstrap_servers="foundry-kafka:9092",
             value_deserializer=lambda v: json.loads(v.decode("utf-8")),
             auto_offset_reset="earliest",
             enable_auto_commit=True,  # Ensure manual commit
@@ -109,3 +106,18 @@ class KafkaSpider(scrapy.Spider):
         kafka_consumer.commit()
 
         yield {"url": response.url, "title": page_title}
+
+
+
+
+def create_kafka_producer():
+    for i in range(10):  # Retry 10 times
+        try:
+            print(f"Attempt {i+1}: Connecting to Kafka...")
+            producer = KafkaProducer(bootstrap_servers="foundry-kafka:9092")
+            print("✅ Successfully connected to Kafka!")
+            return producer
+        except Exception as e:
+            print(f"❌ Failed to connect to Kafka (Attempt {i+1}/10). Retrying in 5s...")
+            time.sleep(5)  # Wait before retrying
+    raise Exception("❌ Kafka is unreachable after multiple retries.")
