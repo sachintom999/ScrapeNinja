@@ -1,70 +1,83 @@
-# # storage-service/main.py
-# from fastapi import FastAPI
-# from pydantic import BaseModel
-# import psycopg2
-# import json
-
-# app = FastAPI()
-
-# # Connect to PostgreSQL
-# conn = psycopg2.connect(
-#     dbname="scraper_db",
-#     user="user",
-#     password="password",
-#     host="postgres",
-#     port="5432"
-# )
-# cursor = conn.cursor()
-
-# class ScrapeResult(BaseModel):
-#     url: str
-#     data: dict
-
-# @app.post("/store")
-# def store_data(result: ScrapeResult):
-#     cursor.execute("INSERT INTO results (url, data) VALUES (%s, %s)", 
-#                    (result.url, json.dumps(result.data)))
-#     conn.commit()
-#     return {"status": "success"}
-
-
-
-import time
-import psycopg2
-from fastapi import FastAPI
-from pydantic import BaseModel
 import json
+import psycopg2
+from kafka import KafkaConsumer
+import os
+from termcolor import cprint
+from fastapi import FastAPI
 
 app = FastAPI()
 
-# Retry connecting to PostgreSQL
-def connect_to_db():
-    retries = 5
-    for i in range(retries):
-        try:
-            conn = psycopg2.connect(
-                dbname="scraper_db",
-                user="user",
-                password="password",
-                host="postgres",
-                port="5432"
-            )
-            return conn
-        except psycopg2.OperationalError:
-            print(f"Postgres not ready, retrying {i+1}/{retries}...")
-            time.sleep(5)
-    raise Exception("Failed to connect to Postgres after retries")
+# Database connection details (Using Docker network)
+DB_NAME = "scraper_db"
+DB_USER = "user"
+DB_PASSWORD = "password"
+DB_HOST = "postgres"  # Docker service name
+DB_PORT = "5432"
 
-conn = connect_to_db()
-cursor = conn.cursor()
+# Connect to PostgreSQL database
+try:
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT
+    )
+    cursor = conn.cursor()
+    cprint("✅ Connected to PostgreSQL database", "green")
+except Exception as e:
+    cprint(f"❌ Error connecting to PostgreSQL: {e}", "red")
+    exit(1)
 
-class ScrapeResult(BaseModel):
-    url: str
-    data: dict
+# Ensure the table exists
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scrapes (
+        id SERIAL PRIMARY KEY,
+        url TEXT NOT NULL,
+        title TEXT NULL
+    );
+""")
+conn.commit()
 
-@app.post("/store")
-def store_data(result: ScrapeResult):
-    cursor.execute("INSERT INTO results (url, data) VALUES (%s, %s)", 
-                   (result.url, json.dumps(result.data)))
-    conn.commit()
-    return {"status": "success"}
+# Kafka Configuration
+KAFKA_BROKER = "foundry-kafka:9092"  # Use Docker service name
+TOPIC_NAME = "crawl_results"
+
+# Kafka Consumer
+try:
+    consumer = KafkaConsumer(
+        TOPIC_NAME,
+        bootstrap_servers=KAFKA_BROKER,
+        auto_offset_reset="earliest",  # Read from the beginning if needed
+        enable_auto_commit=True,
+        value_deserializer=lambda x: json.loads(x.decode("utf-8"))
+    )
+    cprint(f"✅ Connected to Kafka topic '{TOPIC_NAME}'", "green")
+except Exception as e:
+    cprint(f"❌ Error connecting to Kafka: {e}", "red")
+    exit(1)
+
+cprint(f"📥 Listening for messages on '{TOPIC_NAME}'...", "yellow")
+
+# Kafka message consumption loop
+for message in consumer:
+    data = message.value
+    url = data.get("url", "Unknown URL")
+    title = data.get("title", "-- No title found --")
+
+    print(f"📌 Saving to database: {url} - {title}")
+
+    try:
+        cursor.execute(
+            "INSERT INTO scrapes (url, title) VALUES (%s, %s)",
+            (url, title)
+        )
+        conn.commit()
+        cprint("✅ Data inserted successfully", "green")
+    except Exception as e:
+        conn.rollback()
+        cprint(f"❌ Error inserting data: {e}", "red")
+
+
+cursor.close()
+conn.close()
