@@ -20,4 +20,5 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 
 # Run the storage service script
-CMD ["python", "storage.py"]
+# CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

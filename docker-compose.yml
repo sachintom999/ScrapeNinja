@@ -17,9 +17,9 @@ services:
     ports:
       - "2181:2181"
     healthcheck:
-          test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
-          interval: 10s
-          retries: 5
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      retries: 5
 
   my-scraper-1:
     build: ./my-scraper-1
@@ -33,12 +33,15 @@ services:
     ports:
       - "8000:8000"
 
-  # storage-service:
-  #   build: ./storage-service
-  #   ports:
-  #     - "8001:8001"
-  #   depends_on:
-  #     - postgres
+  storage-service:
+    build: ./storage-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/scraper_db
 
   postgres:
     image: postgres
@@ -48,13 +51,14 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
-
-  
-
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "scraper_db"]
+      interval: 5s
+      retries: 5
 
   worker-manager:
     build: ./worker-manager
     depends_on:
       - foundry-kafka
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # ✅ Allow control of Docker outside the container
+      - /var/run/docker.sock:/var/run/docker.sock # ✅ Allow control of Docker outside the container
