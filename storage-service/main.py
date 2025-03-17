@@ -50,8 +50,8 @@ try:
         bootstrap_servers=KAFKA_BROKER,
         auto_offset_reset="earliest",  # Read from the beginning if needed
         enable_auto_commit=True,
-        value_deserializer=lambda x: json.loads(x.decode("utf-8"))
-    )
+        group_id="storage_group",
+        value_deserializer=lambda x: json.loads(x.decode("utf-8")))
     cprint(f"✅ Connected to Kafka topic '{TOPIC_NAME}'", "green")
 except Exception as e:
     cprint(f"❌ Error connecting to Kafka: {e}", "red")
@@ -59,7 +59,7 @@ except Exception as e:
 
 cprint(f"📥 Listening for messages on '{TOPIC_NAME}'...", "yellow")
 
-# Kafka message consumption loop
+
 for message in consumer:
     data = message.value
     url = data.get("url", "Unknown URL")

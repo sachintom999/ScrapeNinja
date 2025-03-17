@@ -6,7 +6,6 @@ app = Flask(__name__)
 @app.route("/scale", methods=["POST"])
 def scale():
     num_workers = request.json.get("num_workers", 1)
-    # subprocess.run(["docker", "compose", "up", "--scale", f"my-scraper-1={num_workers}"])
     subprocess.run(["docker", "compose", "up", "-d", "--scale", f"my-scraper-1={num_workers}"])
 
     return {"status": "success", "scaled_to": num_workers}

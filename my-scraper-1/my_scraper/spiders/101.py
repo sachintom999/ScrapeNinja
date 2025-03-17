@@ -54,30 +54,34 @@ class KafkaSpider(scrapy.Spider):
 
 
 
+
     # def parse(self, response):
     #     """
-    #     Process the response and send data to Kafka.
+    #     Process the response and commit Kafka offset.
     #     """
     #     page_title = response.xpath("//title/text()").get()
+    #     cprint(f"\n\n Scraped URL: {response.url} | Title: {page_title}", "green")
 
-    #     cprint(f"Scraped URL: {response.url} | Title: {page_title}", "green")
-
-    #     # Kafka message format
     #     result = {
     #         "text": response.url, 
+    #         "url": response.url, 
+    #         "title": page_title, 
     #         "author": "Jane Austen", 
     #         "tags": ["aliteracy", "books", "classic", "humor"]
     #     }
 
-    #     # Send message to Kafka
+    #     # Send result to Kafka
     #     future = self.kafka_producer.send("crawl_results", result)
-    #     future.get(timeout=10)  # Ensure the message is actually sent
-    #     self.kafka_producer.flush()  # Force send messages immediately
-    #     cprint(f"✔ Sent to Kafka: {result}", "green")
+    #     future.get(timeout=10)
+    #     self.kafka_producer.flush()
+    #     cprint(f"✔ Response Sent to Kafka\n\n", "green")
+
+    #     # Commit Kafka offset
+    #     kafka_message = response.meta["kafka_message"]
+    #     kafka_consumer = response.meta["kafka_consumer"]
+    #     kafka_consumer.commit()
 
     #     yield {"url": response.url, "title": page_title}
-
-
 
     def parse(self, response):
         """
@@ -94,8 +98,11 @@ class KafkaSpider(scrapy.Spider):
             "tags": ["aliteracy", "books", "classic", "humor"]
         }
 
+        # ✅ Convert to JSON string and encode as bytes
+        result_bytes = json.dumps(result).encode("utf-8")
+
         # Send result to Kafka
-        future = self.kafka_producer.send("crawl_results", result)
+        future = self.kafka_producer.send("crawl_results", value=result_bytes)
         future.get(timeout=10)
         self.kafka_producer.flush()
         cprint(f"✔ Response Sent to Kafka\n\n", "green")
@@ -106,8 +113,6 @@ class KafkaSpider(scrapy.Spider):
         kafka_consumer.commit()
 
         yield {"url": response.url, "title": page_title}
-
-
 
 
 def create_kafka_producer():

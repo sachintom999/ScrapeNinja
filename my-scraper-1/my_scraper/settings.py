@@ -116,7 +116,7 @@ DOWNLOADER_MIDDLEWARES = {
     # 'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
     'my_scraper.middlewares.RotateUserAgentMiddleware': 400,
      'my_scraper.middlewares.TLSMiddleware': 543,
-     'my_scraper.middlewares.CookieMiddleware':543,
+    #  'my_scraper.middlewares.CookieMiddleware':543,
      'my_scraper.middlewares.ProxyMiddleware': 600,
     
 }

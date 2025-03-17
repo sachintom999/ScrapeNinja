@@ -116,29 +116,7 @@ class TLSMiddleware:
     def __init__(self):
         self.session = tls_client.Session(client_identifier="chrome_116")
     
-    
-    # def process_request(self, request, spider):
-    #     cprint(f"🔴Using TLSMiddleware for URL: {request.url}","green")
-    #     """Intercepts requests and sends them using tls-client"""
-    #     session = tls_client.Session(
-    #         client_identifier="chrome_116",  # Spoof Chrome 116
-    #         # random_tls_extension_order=True
-    #     )
 
-    #     try:
-    #         response = session.get(request.url)
-    #         request.meta['proxy'] = None
-    #         cprint(f"🟢TLS Response Status: {response.status_code}","green")
-    #         return scrapy.http.HtmlResponse(
-    #             url=request.url,
-    #             body=response.text,
-    #             encoding='utf-8',
-    #             request=request
-    #         )
-    #     except Exception as e:
-    #         spider.logger.error(f"TLS Request failed: {e}")
-    #         return None  # Let Scrapy retry the request
-    
     
     def process_request(self, request, spider):
         try:
@@ -191,12 +169,12 @@ class CookieMiddleware:
 
 
 
-# class RotateUserAgentMiddleware:
-#     user_agents = [
-#         "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-#         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-#         "Mozilla/5.0 (X11; Linux x86_64)",
-#     ]
+class RotateUserAgentMiddleware:
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+        "Mozilla/5.0 (X11; Linux x86_64)",
+    ]
 
     def process_request(self, request, spider):
         request.headers['User-Agent'] = random.choice(self.user_agents)
@@ -207,9 +185,6 @@ PROXIES = [
     "http://98.76.54.32:3128",
 ]
 
-# class ProxyMiddleware:
-#     def process_request(self, request, spider):
-#         request.meta['proxy'] = random.choice(PROXIES)
 
 
 
