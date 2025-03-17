@@ -40,14 +40,14 @@ services:
   #   depends_on:
   #     - postgres
 
-  # postgres:
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_DB: scraper_db
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
-  #   ports:
-  #     - "5432:5432"
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: scraper_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
 
   
 
