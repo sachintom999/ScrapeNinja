@@ -49,9 +49,12 @@ services:
   #   ports:
   #     - "5432:5432"
 
+  
+
+
   worker-manager:
     build: ./worker-manager
     depends_on:
       - foundry-kafka
-
-
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # ✅ Allow control of Docker outside the container
