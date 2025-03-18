@@ -1,4 +1,4 @@
-# ScalableScraperX 
+# ScrapeNinja
 A high-performance, scalable web scraper using Scrapy, Kafka, and Redis, with advanced **anti-bot evasion** and a **microservices architecture** for seamless data extraction at scale.  
 
 ## Features  
@@ -10,7 +10,7 @@ A high-performance, scalable web scraper using Scrapy, Kafka, and Redis, with ad
 
 ---
 
-## 📌 Architecture  
+## Architecture  
 
 
 ![Architecture Diagram](architecture.png)
